@@ -1,0 +1,38 @@
+resources:
+- name: pcf-ops
+  type: registry-image
+  icon: docker
+  source:
+    repository: engineerbetter/pcf-ops
+    username: ((dockerhub_user))
+    password: ((dockerhub_password))
+
+- name: control-tower-release
+  type: github-release
+  icon: github
+  source:
+    owner: EngineerBetter
+    repository: control-tower
+    access_token: ((github_access_token))
+
+jobs:
+- name: test-persistent-disk
+  plan:
+  - get: pcf-ops
+  - get: control-tower-release
+  - task: test
+    image: pcf-ops
+    config:
+      platform: linux
+      inputs:
+      - name: control-tower-release
+      run:
+        path: bash
+        args:
+        - -xeuc
+        - |
+          chmod +x control-tower-release/control-tower-linux-amd64
+          ./control-tower-release/control-tower-linux-amd64 deploy smb-disk-size-acceptance --iaas AWS --persistent-disk small
+      params:
+        AWS_ACCESS_KEY_ID: ((aws_access_key_id))
+        AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
